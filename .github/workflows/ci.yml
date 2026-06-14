@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: tradepilot
+          POSTGRES_PASSWORD: tradepilot
+          POSTGRES_DB: tradepilot_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U tradepilot"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://tradepilot:tradepilot@localhost:5432/tradepilot_test?schema=public
+      DIRECT_URL: postgresql://tradepilot:tradepilot@localhost:5432/tradepilot_test?schema=public
+      REDIS_URL: redis://localhost:6379
+      NEXTAUTH_SECRET: ci-secret-ci-secret-ci-secret-32
+      NEXTAUTH_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9.12.0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @tradepilot/db db:generate
+      - run: pnpm --filter @tradepilot/db db:push
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+        env:
+          OPENAI_API_KEY: sk-test
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Vercel
+        run: echo "Deploy handled by Vercel Git integration on main."

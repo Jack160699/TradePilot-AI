@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tradepilot
+      POSTGRES_PASSWORD: tradepilot
+      POSTGRES_DB: tradepilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tradepilot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://tradepilot:tradepilot@postgres:5432/tradepilot?schema=public
+      DIRECT_URL: postgresql://tradepilot:tradepilot@postgres:5432/tradepilot?schema=public
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  redisdata:

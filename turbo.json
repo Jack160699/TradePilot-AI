@@ -1,0 +1,41 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["**/.env.*local", ".env"],
+  "globalEnv": [
+    "DATABASE_URL",
+    "REDIS_URL",
+    "NEXTAUTH_SECRET",
+    "NEXTAUTH_URL",
+    "OPENAI_API_KEY",
+    "STRIPE_SECRET_KEY",
+    "RAZORPAY_KEY_SECRET",
+    "TELEGRAM_BOT_TOKEN",
+    "TWILIO_AUTH_TOKEN"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "db:generate": {
+      "cache": false
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^build"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}
