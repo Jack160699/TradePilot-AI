@@ -13,7 +13,7 @@ graph TD
 
   subgraph Vercel
     Web["Next.js (standalone)"]
-    Cron["Cron: /api/cron */15m"]
+    Cron["Cron: /api/cron daily 03:00 UTC"]
   end
 
   subgraph Managed["Managed services"]
@@ -38,8 +38,13 @@ graph TD
 ## Vercel
 
 - `vercel.json` sets the Turbo-filtered build command and registers the cron.
+- **Vercel Hobby compatible:** the cron runs **once per day** (`0 3 * * *`) — Hobby permits
+  at most one daily run and up to two cron jobs. Frequent/real-time signal generation is
+  on-demand via `POST /api/engine/run` (the dashboard "Run signal engine" button), so no
+  sub-daily schedule is needed. The cron route caps `maxDuration` at 60s (Hobby ceiling).
 - Next.js runs in `output: "standalone"` mode.
-- Use Neon/RDS for Postgres and Upstash for Redis; set env vars in the dashboard.
+- Postgres is Supabase (set `DATABASE_URL` pooled :6543 and `DIRECT_URL` direct :5432); Redis
+  (Upstash) is optional — rate limiting and caching fail open without it.
 
 ## Docker
 

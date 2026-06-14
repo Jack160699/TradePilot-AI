@@ -3,6 +3,11 @@ import { auth } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { runSignalEngine } from '@/lib/signal-engine';
 
+// On-demand generation makes live market-data calls; allow up to the Hobby
+// 60s ceiling so a manual run doesn't hit the default 10s function limit.
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
+
 /** Run the signal engine for the current user's enabled strategies. */
 export async function POST() {
   const session = await auth();
